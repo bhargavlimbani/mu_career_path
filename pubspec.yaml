@@ -1,0 +1,57 @@
+name: mu_career_pat_offline
+description: "A new Flutter project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core project dependencies (from MU Career Path reference)
+  uuid: ^3.0.7
+  shared_preferences: ^2.1.1
+  file_picker: ^8.1.4
+  image_picker: ^0.8.7+5
+  path_provider: ^2.0.15
+  path: ^1.8.2
+  open_filex: ^4.4.0
+  url_launcher: ^6.3.0
+
+  # Firebase dependencies
+  firebase_core: ^3.3.0          # Required for all Firebase features
+  firebase_auth: ^5.1.4          # For login & register
+  cloud_firestore: ^5.4.4        # Optional: Store user info like email, name, etc.
+
+  # UI
+  cupertino_icons: ^1.0.8
+
+  # Linting and static analysis
+  flutter_lints: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon.png
+
+# -------------------------
+# Flutter Launcher Icons
+# -------------------------
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"

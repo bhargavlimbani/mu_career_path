@@ -1,314 +1,168 @@
-import 'dart:convert';
-import 'dart:io' show File;
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../data/local_data.dart';
 import '../widgets/custom_textfield.dart';
 import '../widgets/custom_button.dart';
+import '../theme/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final Map<String, dynamic> userData;
+  const EditProfileScreen({super.key, required this.userData});
 
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final ld = LocalData();
-
-  // ✅ Always initialize controllers to avoid LateInitializationError
-  final _name = TextEditingController();
-  final _branch = TextEditingController();
-  final _year = TextEditingController();
-  final _contact = TextEditingController();
-  final _linkedin = TextEditingController();
-  final _github = TextEditingController();
+  late TextEditingController _emailController;
+  late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
+  late TextEditingController _nameController;
+  late TextEditingController _courseController;
+  late TextEditingController _yearController;
+  late TextEditingController _contactController;
+  late TextEditingController _linkedinController;
+  late TextEditingController _githubController;
 
   String? _photoPath;
-  List<String> _resumes = [];
-  bool _loading = true; // ⏳ loading flag
+  bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    final data = widget.userData;
+
+    _emailController = TextEditingController(text: data['email'] ?? '');
+    _passwordController = TextEditingController(text: '');
+    _confirmPasswordController = TextEditingController(text: '');
+    _nameController = TextEditingController(text: data['name'] ?? '');
+    _courseController = TextEditingController(text: data['course'] ?? '');
+    _yearController = TextEditingController(text: data['year'] ?? '');
+    _contactController = TextEditingController(text: data['contact'] ?? '');
+    _linkedinController = TextEditingController(text: data['linkedin'] ?? '');
+    _githubController = TextEditingController(text: data['github'] ?? '');
+    _photoPath = data['photoPath'];
   }
 
-  Future<void> _loadUserData() async {
-    await ld.init();
-    var u = ld.currentUser!;
-    setState(() {
-      _name.text = u.name;
-      _branch.text = u.branch;
-      _year.text = u.year;
-      _contact.text = u.contact ?? '';
-      _linkedin.text = u.linkedin ?? '';
-      _github.text = u.github ?? '';
-      _photoPath = u.photoPath;
-      _resumes = List.from(u.resumePaths);
-      _loading = false;
-    });
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
+    _courseController.dispose();
+    _yearController.dispose();
+    _contactController.dispose();
+    _linkedinController.dispose();
+    _githubController.dispose();
+    super.dispose();
   }
 
-  // ✅ Build image provider for profile photo
   ImageProvider? _buildImageProvider(String? path) {
     if (path == null || path.isEmpty) return null;
-
-    if (kIsWeb) {
-      try {
-        return MemoryImage(base64Decode(path));
-      } catch (_) {
-        return null;
-      }
-    } else {
-      final file = File(path);
-      if (file.existsSync()) return FileImage(file);
-      return null;
-    }
+    if (kIsWeb) return null; // Web support optional
+    final file = File(path);
+    if (file.existsSync()) return FileImage(file);
+    return null;
   }
 
-  // ✅ Pick profile photo
   Future<void> _pickPhoto() async {
-    final ImagePicker ip = ImagePicker();
-    final XFile? x =
-        await ip.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (x == null) return;
-
-    String? savedPath;
-    if (kIsWeb) {
-      final bytes = await x.readAsBytes();
-      savedPath = base64Encode(bytes);
-    } else {
-      final copied = await ld.copyFileToAppDir(File(x.path));
-      savedPath = copied;
-    }
-
-    setState(() {
-      _photoPath = savedPath;
-    });
-  }
-
-  // ✅ Pick resume (PDF or DOCX)
-  Future<void> _pickResume() async {
-    final res = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'docx'],
+    final picker = ImagePicker();
+    final xFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
     );
-    if (res == null || res.files.isEmpty) return;
-
-    if (kIsWeb) {
-      setState(() {
-        _resumes.add(res.files.single.name);
-      });
-    } else {
-      final file = File(res.files.single.path!);
-      final copied = await ld.copyFileToAppDir(file);
-      setState(() {
-        _resumes.add(copied);
-      });
-    }
+    if (xFile != null) setState(() => _photoPath = xFile.path);
   }
 
-  // ✅ URL launcher
-  Future<void> _launchUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not open link')));
-      }
-    } catch (_) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Invalid URL')));
-    }
-  }
-
-  // ✅ Save user profile
-  Future<void> _save() async {
-    // ✅ Validate contact number
-    if (_contact.text.trim().isNotEmpty &&
-        !RegExp(r'^\d{10}$').hasMatch(_contact.text.trim())) {
+  void _saveProfile() {
+    if (_passwordController.text.isNotEmpty &&
+        _passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid mobile number (must be 10 digits)')),
+        const SnackBar(content: Text('Passwords do not match')),
       );
       return;
     }
 
-    var u = ld.currentUser!;
-    u.name = _name.text.trim();
-    u.branch = _branch.text.trim();
-    u.year = _year.text.trim();
-    u.photoPath = _photoPath;
-    u.resumePaths = _resumes;
-    u.contact = _contact.text.trim();
-    u.linkedin = _linkedin.text.trim();
-    u.github = _github.text.trim();
-    await ld.updateUser(u);
+    final updatedData = {
+      'email': _emailController.text.trim(),
+      'password': _passwordController.text.trim(), // optional
+      'name': _nameController.text.trim(),
+      'course': _courseController.text.trim(),
+      'year': _yearController.text.trim(),
+      'contact': _contactController.text.trim(),
+      'linkedin': _linkedinController.text.trim(),
+      'github': _githubController.text.trim(),
+      'photoPath': _photoPath,
+    };
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Profile updated successfully')));
-    Navigator.pop(context, true);
+    Navigator.pop(context, updatedData);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      appBar: AppBar(title: Text('Edit Profile')),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // ---------- PROFILE PHOTO ----------
-              GestureDetector(
-                onTap: _pickPhoto,
-                child: CircleAvatar(
-                  radius: 48,
-                  backgroundImage: _buildImageProvider(_photoPath),
-                  child: _photoPath == null
-                      ? Icon(Icons.camera_alt, size: 32)
-                      : null,
-                ),
+      backgroundColor: AppTheme.secondaryColor,
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(25)),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: _pickPhoto,
+              child: CircleAvatar(
+                radius: 48,
+                backgroundImage: _buildImageProvider(_photoPath),
+                child: _photoPath == null
+                    ? const Icon(Icons.camera_alt, size: 32, color: Colors.white70)
+                    : null,
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Tap to change profile photo',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              SizedBox(height: 12),
+            ),
+            const SizedBox(height: 16),
 
-              // ---------- TEXT FIELDS ----------
-              CustomTextField(controller: _name, hint: 'Full Name'),
-              SizedBox(height: 8),
-              CustomTextField(controller: _branch, hint: 'Branch (e.g., CSE)'),
-              SizedBox(height: 8),
-              CustomTextField(controller: _year, hint: 'Year (e.g., 3)'),
-              SizedBox(height: 8),
-              CustomTextField(controller: _contact, hint: 'Contact Number'),
-              SizedBox(height: 8),
-              CustomTextField(controller: _linkedin, hint: 'LinkedIn URL'),
-              SizedBox(height: 8),
-              CustomTextField(controller: _github, hint: 'GitHub URL'),
+            // Form fields
+            CustomTextField(controller: _emailController, hint: 'Email', enabled: false),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _passwordController, hint: 'New Password', obscureText: true),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _confirmPasswordController, hint: 'Confirm Password', obscureText: true),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _nameController, hint: 'Full Name'),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _courseController, hint: 'Course / Branch'),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _yearController, hint: 'Year'),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _contactController, hint: 'Contact Number'),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _linkedinController, hint: 'LinkedIn URL'),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _githubController, hint: 'GitHub URL'),
+            const SizedBox(height: 24),
 
-              SizedBox(height: 8),
-              // ---------- CLICKABLE LINKS ----------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_linkedin.text.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () => _launchUrl(_linkedin.text.trim()),
-                      icon: Icon(Icons.link, color: Colors.blue),
-                      label: Text('Open LinkedIn'),
-                    ),
-                  if (_github.text.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () => _launchUrl(_github.text.trim()),
-                      icon: Icon(Icons.code, color: Colors.black87),
-                      label: Text('Open GitHub'),
-                    ),
-                ],
-              ),
-
-              SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Resume History',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(height: 6),
-
-              // ---------- RESUME LIST ----------
-              if (_resumes.isEmpty)
-                Text('No resumes uploaded.')
-              else
-                ..._resumes.reversed.map(
-                  (p) => Card(
-                    child: ListTile(
-                      leading: Icon(Icons.picture_as_pdf, color: Colors.red),
-                      title: Text(p.split('/').last),
-                      subtitle: Text(p),
-                      trailing: IconButton(
-                        icon: Icon(Icons.open_in_new, color: Colors.blue),
-                        onPressed: () async {
-                          if (kIsWeb) {
-                            // On web, show the file info since we can't open PDFs directly
-                            showDialog(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: Text('Resume Information'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('File: ${p.split('/').last}'),
-                                    SizedBox(height: 8),
-                                    Text('Note: PDF viewing is not available on web. Download the file to view it.'),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text('OK')),
-                                ],
-                              ),
-                            );
-                          } else {
-                            // On mobile, check if file exists and open it
-                            final file = File(p);
-                            if (file.existsSync()) {
-                              try {
-                                await OpenFilex.open(p);
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Could not open file: $e')),
-                                );
-                              }
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('File not found: ${p.split('/').last}')),
-                              );
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-
-              SizedBox(height: 6),
-
-              // ---------- UPLOAD BUTTON ----------
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _pickResume,
-                      icon: Icon(Icons.upload_file),
-                      label: Text('Upload Resume'),
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 12),
-              CustomButton(text: 'Save Profile', onPressed: _save),
-            ],
-          ),
+            // Save button
+            CustomButton(
+              text: 'Save Profile',
+              onPressed: _saveProfile,
+              color: AppTheme.primaryColor,
+              textColor: Colors.white,
+            ),
+          ],
         ),
       ),
     );

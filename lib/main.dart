@@ -53,12 +53,12 @@ class MUApp extends StatelessWidget {
       // ✅ Set the first screen dynamically using Firebase Auth
       home: const AuthGate(),
 
-      // ✅ Define all app routes
+      // ✅ Define all app routes (edit profile removed because it requires userData)
       routes: {
         '/login': (_) => const LoginScreen(),
         '/student': (_) => const StudentDashboard(),
         '/admin': (_) => const AdminDashboard(),
-        '/edit_profile': (_) => const EditProfileScreen(),
+        // '/edit_profile': (_) => const EditProfileScreen(), // Removed
         '/add_experience': (_) => const AddExperienceScreen(),
         '/companies': (_) => ViewCompaniesScreen(),
       },

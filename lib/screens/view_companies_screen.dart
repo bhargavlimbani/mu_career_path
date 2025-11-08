@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/local_data.dart';
+import '../theme/app_theme.dart';
 
 class ViewCompaniesScreen extends StatelessWidget {
   final ld = LocalData();
@@ -9,8 +10,17 @@ class ViewCompaniesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var user = ld.currentUser;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Companies')),
+      backgroundColor: AppTheme.secondaryColor,
+      appBar: AppBar(
+        title: const Text('Companies'),
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: ListView.builder(
@@ -18,15 +28,37 @@ class ViewCompaniesScreen extends StatelessWidget {
           itemBuilder: (context, i) {
             var c = ld.companies[i];
             bool show = true;
-            if (user != null && user.role == (user.email.endsWith('@marwadiuniversity.ac.in') ? user.role : user.role)) {
+
+            // Check if company should be shown for unplaced students
+            if (user != null) {
               if (!c.allowedForUnplaced) show = false;
             }
-            if (!show) return SizedBox.shrink();
+
+            if (!show) return const SizedBox.shrink();
+
             return Card(
-              margin: EdgeInsets.symmetric(vertical: 6),
+              color: Colors.white,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 3,
               child: ListTile(
-                title: Text(c.name),
-                subtitle: Text(c.description),
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                title: Text(
+                  c.name,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  c.description,
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+                leading: CircleAvatar(
+                  backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                  child: const Icon(Icons.business, color: AppTheme.primaryColor),
+                ),
               ),
             );
           },

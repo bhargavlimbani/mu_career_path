@@ -15,11 +15,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   bool _isLoading = false;
   bool _obscure = true;
 
   final AuthService _auth = AuthService();
 
+  // 🔐 Login function
   void _loginUser() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -38,8 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,15 +75,15 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo
+                  // 🖼️ Logo
                   Image.asset(
-                    "assets/icon.png", // your logo path
+                    "assets/icon.png",
                     height: 120,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 24),
 
-                  // Email Field
+                  // ✉️ Email field
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -88,11 +93,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       icon: Icons.email_outlined,
                       hintTextColor: Colors.grey[600],
                     ),
-                    validator: (val) => val!.isEmpty ? 'Enter an email' : null,
+                    validator: (val) =>
+                        val == null || val.isEmpty ? 'Enter an email' : null,
                   ),
                   const SizedBox(height: 18),
 
-                  // Password Field
+                  // 🔒 Password field
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscure,
@@ -102,18 +108,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       icon: Icons.lock_outline,
                       hintTextColor: Colors.grey[600],
                       suffix: IconButton(
-                        onPressed: () => setState(() => _obscure = !_obscure),
+                        onPressed: () =>
+                            setState(() => _obscure = !_obscure),
                         icon: Icon(
-                          _obscure ? Icons.visibility_off : Icons.visibility,
+                          _obscure
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: AppTheme.primaryColor,
                         ),
                       ),
                     ),
-                    validator: (val) => val!.isEmpty ? 'Enter your password' : null,
+                    validator: (val) => val == null || val.isEmpty
+                        ? 'Enter your password'
+                        : null,
                   ),
                   const SizedBox(height: 28),
 
-                  // Login Button
+                  // 🔘 Login button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -121,23 +132,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: AppTheme.elevatedButtonStyle(),
                       onPressed: _isLoading ? null : _loginUser,
                       child: _isLoading
-                          ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppTheme.secondaryColor),
-                        ),
-                      )
+                          ? SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(
+                                        AppTheme.secondaryColor),
+                              ),
+                            )
                           : const Text(
-                        "Login",
-                        style: AppTheme.buttonText,
-                      ),
+                              "Login",
+                              style: AppTheme.buttonText,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 18),
 
-                  // Register Button
+                  // 📝 Register link
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -148,11 +161,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.blackColor, // sets the text color to black
+                      foregroundColor: AppTheme.blackColor,
                     ),
                     child: Text(
                       "Don’t have an account? Register",
-                      style: AppTheme.linkText.copyWith(color: AppTheme.blackColor),
+                      style: AppTheme.linkText
+                          .copyWith(color: AppTheme.blackColor),
                     ),
                   ),
                 ],

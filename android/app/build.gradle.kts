@@ -12,10 +12,10 @@ android {
     namespace = "com.example.mu_career_path"
     compileSdk = flutter.compileSdkVersion
 
-    // 🔧 Updated to use the latest NDK required by your plugins
+    // 🔧 Use the latest NDK required by your plugins
     ndkVersion = "27.0.12077973"
 
-    // 🔧 Updated Java compatibility (avoid obsolete source value warnings)
+    // 🔧 Java compatibility
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.mu_career_path"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23  // 🔧 increased from 21 to 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

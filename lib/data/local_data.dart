@@ -103,7 +103,7 @@ class LocalData {
           var nu = UserModel.createNew(email);
           users.add(nu);
           _saveAll();
-          return nu;
+          return nu;  
         },
       );
       currentUser = exist;

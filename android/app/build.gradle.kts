@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.mu_career_path"
-        minSdk = 23  // 🔧 increased from 21 to 23
+        minSdk = flutter.minSdkVersion  // 🔧 increased from 21 to 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

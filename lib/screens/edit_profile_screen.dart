@@ -9,8 +9,9 @@ import '../widgets/custom_button.dart';
 import '../theme/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  // Keep constructor simple (screen will load current user data from Firestore)
-  const EditProfileScreen({super.key, required Map<String, dynamic> userData});
+  final Map<String, dynamic>? userData;
+
+  const EditProfileScreen({super.key, this.userData});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -21,15 +22,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  late TextEditingController _emailController;
-  late TextEditingController _firstNameController; // First name
-  late TextEditingController _branchController;    // Branch (course)
-  late TextEditingController _yearController;
-  late TextEditingController _contactController;
-  late TextEditingController _linkedinController;
-  late TextEditingController _githubController;
-  late TextEditingController _passwordController;       // New password
-  late TextEditingController _confirmPasswordController; // Confirm password
+  // Controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _courseController = TextEditingController();
+  final TextEditingController _yearController = TextEditingController();
+  final TextEditingController _cgpaController = TextEditingController();
+  final TextEditingController _careerGoalController = TextEditingController();
+  final TextEditingController _skillsController = TextEditingController();
+  final TextEditingController _linkedinController = TextEditingController();
+  final TextEditingController _githubController = TextEditingController();
+  final TextEditingController _resumeLinkController = TextEditingController();
+  final TextEditingController _portfolioLinkController = TextEditingController();
+  final TextEditingController _achievementsController = TextEditingController();
+  final TextEditingController _languagesController = TextEditingController();
 
   String? _photoPath;
   String? _photoUrl;
@@ -38,109 +45,73 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
-    _firstNameController = TextEditingController();
-    _branchController = TextEditingController();
-    _yearController = TextEditingController();
-    _contactController = TextEditingController();
-    _linkedinController = TextEditingController();
-    _githubController = TextEditingController();
-    _passwordController = TextEditingController();
-    _confirmPasswordController = TextEditingController();
-
-    _loadUserData();
+    _loadInitialData();
   }
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _firstNameController.dispose();
-    _branchController.dispose();
-    _yearController.dispose();
-    _contactController.dispose();
-    _linkedinController.dispose();
-    _githubController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadUserData() async {
-    setState(() => _loading = true);
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        final data = doc.data();
-        if (data != null) {
-          _emailController.text = data['email'] ?? '';
-          // Keep naming consistent: using 'name' field from Firestore as first name
-          _firstNameController.text = data['name'] ?? '';
-          _branchController.text = data['course'] ?? '';
-          _yearController.text = data['year'] ?? '';
-          _contactController.text = data['contact'] ?? '';
-          _linkedinController.text = data['linkedin'] ?? '';
-          _githubController.text = data['github'] ?? '';
-          _photoUrl = data['photoUrl'];
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading user data: $e')),
-        );
-      }
-    } finally {
-      setState(() => _loading = false);
+  void _loadInitialData() {
+    final data = widget.userData;
+    if (data != null) {
+      _nameController.text = data['name'] ?? '';
+      _emailController.text = data['email'] ?? '';
+      _contactController.text = data['contact'] ?? '';
+      _courseController.text = data['course'] ?? '';
+      _yearController.text = data['year'] ?? '';
+      _cgpaController.text = data['cgpa'] ?? '';
+      _careerGoalController.text = data['careerGoal'] ?? '';
+      _skillsController.text = (data['skills'] is List)
+          ? (data['skills'] as List).join(', ')
+          : (data['skills'] ?? '');
+      _linkedinController.text = data['linkedin'] ?? '';
+      _githubController.text = data['github'] ?? '';
+      _resumeLinkController.text = data['resumeLink'] ?? '';
+      _portfolioLinkController.text = data['portfolioLink'] ?? '';
+      _achievementsController.text = (data['achievements'] is List)
+          ? (data['achievements'] as List).join(', ')
+          : (data['achievements'] ?? '');
+      _languagesController.text = (data['languagesKnown'] is List)
+          ? (data['languagesKnown'] as List).join(', ')
+          : (data['languagesKnown'] ?? '');
+      _photoUrl = data['photoUrl'];
     }
+    setState(() => _loading = false);
   }
 
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
     final xFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (xFile != null) {
-      setState(() => _photoPath = xFile.path);
-    }
+    if (xFile != null) setState(() => _photoPath = xFile.path);
   }
 
   Future<void> _saveProfile() async {
-    // Validate passwords match if provided
-    if (_passwordController.text.isNotEmpty &&
-        _passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
-
     setState(() => _loading = true);
-
     try {
       final user = _auth.currentUser;
-      if (user == null) throw Exception("No user logged in");
+      if (user == null) throw Exception("User not logged in.");
 
       String? uploadedPhotoUrl = _photoUrl;
 
-      // Upload new profile photo if selected
+      // Upload photo if changed
       if (_photoPath != null) {
         final ref = _storage.ref().child('profile_photos/${user.uid}.jpg');
         await ref.putFile(File(_photoPath!));
         uploadedPhotoUrl = await ref.getDownloadURL();
       }
 
-      // Update password if provided
-      if (_passwordController.text.isNotEmpty) {
-        await user.updatePassword(_passwordController.text.trim());
-      }
-
-      // Prepare updated data; 'name' stores first name to keep DB consistent
       final updatedData = {
-        'name': _firstNameController.text.trim(),
-        'course': _branchController.text.trim(),
-        'year': _yearController.text.trim(),
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
         'contact': _contactController.text.trim(),
+        'course': _courseController.text.trim(),
+        'year': _yearController.text.trim(),
+        'cgpa': _cgpaController.text.trim(),
+        'careerGoal': _careerGoalController.text.trim(),
+        'skills': _skillsController.text.trim().split(',').map((e) => e.trim()).toList(),
         'linkedin': _linkedinController.text.trim(),
         'github': _githubController.text.trim(),
+        'resumeLink': _resumeLinkController.text.trim(),
+        'portfolioLink': _portfolioLinkController.text.trim(),
+        'achievements': _achievementsController.text.trim().split(',').map((e) => e.trim()).toList(),
+        'languagesKnown': _languagesController.text.trim().split(',').map((e) => e.trim()).toList(),
         'photoUrl': uploadedPhotoUrl,
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -153,19 +124,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
         Navigator.pop(context, true);
       }
-    } on FirebaseException catch (e) {
-      // handle firebase-specific exceptions (e.g., requires-recent-login)
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving profile: ${e.message}')),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving profile: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving profile: $e')),
+      );
     } finally {
       setState(() => _loading = false);
     }
@@ -173,22 +135,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   ImageProvider? _buildImageProvider() {
     if (_photoPath != null) return FileImage(File(_photoPath!));
-    if (_photoUrl != null && _photoUrl!.isNotEmpty) {
-      return NetworkImage(_photoUrl!);
-    }
+    if (_photoUrl != null && _photoUrl!.isNotEmpty) return NetworkImage(_photoUrl!);
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       backgroundColor: AppTheme.secondaryColor,
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
         shape: const RoundedRectangleBorder(
@@ -202,43 +160,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: _pickPhoto,
-              child: CircleAvatar(
-                radius: 48,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-                backgroundImage: _buildImageProvider(),
-                child: _photoUrl == null && _photoPath == null
-                    ? const Icon(Icons.camera_alt, size: 32, color: Colors.white70)
-                    : null,
+            // Profile Photo
+            Center(
+              child: GestureDetector(
+                onTap: _pickPhoto,
+                child: CircleAvatar(
+                  radius: 55,
+                  backgroundColor: AppTheme.primaryColor.withOpacity(0.3),
+                  backgroundImage: _buildImageProvider(),
+                  child: _buildImageProvider() == null
+                      ? const Icon(Icons.camera_alt, size: 40, color: Colors.white70)
+                      : null,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 25),
 
-            // Email (read-only)
-            CustomTextField(controller: _emailController, hint: 'Email', enabled: false),
-            const SizedBox(height: 12),
-
-            // Reordered fields (exact requested order)
-            CustomTextField(controller: _firstNameController, hint: 'First name'),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _branchController, hint: 'Branch'),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _yearController, hint: 'Year'),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _contactController, hint: 'Contact Number'),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _linkedinController, hint: 'LinkedIn URL'),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _githubController, hint: 'GitHub URL'),
-            const SizedBox(height: 12),
-
-            // Passwords at the end in requested order
-            CustomTextField(controller: _passwordController, hint: 'New Password (optional)', obscureText: true),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _confirmPasswordController, hint: 'Confirm Password', obscureText: true),
+            _sectionContainer("👤 Personal Information", [
+              CustomTextField(controller: _nameController, hint: 'Full Name'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _emailController, hint: 'Email', enabled: false),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _contactController, hint: 'Contact Number'),
+            ]),
             const SizedBox(height: 24),
+
+            _sectionContainer("🎓 Academic Information", [
+              CustomTextField(controller: _courseController, hint: 'Course / Branch'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _yearController, hint: 'Year'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _cgpaController, hint: 'CGPA'),
+            ]),
+            const SizedBox(height: 24),
+
+            _sectionContainer("💼 Professional Information", [
+              CustomTextField(controller: _careerGoalController, hint: 'Career Goal'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _skillsController, hint: 'Skills (comma separated)'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _linkedinController, hint: 'LinkedIn URL'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _githubController, hint: 'GitHub URL'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _resumeLinkController, hint: 'Resume Link'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _portfolioLinkController, hint: 'Portfolio Link'),
+            ]),
+            const SizedBox(height: 24),
+
+            _sectionContainer("🏆 Achievements & Languages", [
+              CustomTextField(controller: _achievementsController, hint: 'Achievements (comma separated)'),
+              const SizedBox(height: 12),
+              CustomTextField(controller: _languagesController, hint: 'Languages Known (comma separated)'),
+            ]),
+            const SizedBox(height: 30),
 
             CustomButton(
               text: 'Save Profile',
@@ -248,6 +226,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Custom Section Container with teal border
+  Widget _sectionContainer(String title, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppTheme.primaryColor, width: 1.4),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppTheme.primaryColor)),
+          const SizedBox(height: 10),
+          ...children,
+        ],
       ),
     );
   }

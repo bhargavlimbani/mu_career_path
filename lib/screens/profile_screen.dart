@@ -38,9 +38,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error loading profile: $e')));
       }
     } finally {
       setState(() => _loading = false);
@@ -63,12 +62,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppTheme.secondaryColor,
       appBar: AppBar(
-        title: const Text("Profile"),
+        title: const Text(
+          'Profile',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(25)),
         ),
+        centerTitle: true,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -111,7 +114,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.black87,
                 ),
               ),
-
               const SizedBox(height: 8),
 
               // ======= Email =======
@@ -122,11 +124,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.black54,
                 ),
               ),
-
               const SizedBox(height: 20),
 
-              // ======= Info Card =======
-              _buildInfoCard(),
+              // ======= Info Sections =======
+              _buildSection(
+                  "👤 Personal Information",
+                  [
+                    _infoTile("📞 Contact",
+                        _userData!['contact'] ?? "N/A"),
+                  ]),
+              const SizedBox(height: 16),
+
+              _buildSection(
+                  "🎓 Academic Information",
+                  [
+                    _infoTile("🏫 Course",
+                        _userData!['course'] ?? "N/A"),
+                    _infoTile("📅 Year", _userData!['year'] ?? "N/A"),
+                    _infoTile("📊 CGPA", _userData!['cgpa'] ?? "N/A"),
+                  ]),
+              const SizedBox(height: 16),
+
+              _buildSection(
+                  "💼 Professional Information",
+                  [
+                    _infoTile("🎯 Career Goal",
+                        _userData!['careerGoal'] ?? "N/A"),
+                    _infoTile(
+                        "🧠 Skills",
+                        _listToString(
+                            _userData!['skills'] ?? "N/A")),
+                    _infoTile("🔗 LinkedIn",
+                        _userData!['linkedin'] ?? "N/A"),
+                    _infoTile("💻 GitHub",
+                        _userData!['github'] ?? "N/A"),
+                    _infoTile("📄 Resume Link",
+                        _userData!['resumeLink'] ?? "N/A"),
+                    _infoTile("🌐 Portfolio",
+                        _userData!['portfolioLink'] ?? "N/A"),
+                  ]),
+              const SizedBox(height: 16),
+
+              _buildSection(
+                  "🏆 Achievements & Languages",
+                  [
+                    _infoTile("🏅 Achievements",
+                        _listToString(_userData!['achievements'])),
+                    _infoTile("🗣️ Languages Known",
+                        _listToString(_userData!['languagesKnown'])),
+                  ]),
 
               const SizedBox(height: 25),
 
@@ -178,11 +224,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ======= Info Card =======
-  Widget _buildInfoCard() {
+  // ======= Section Builder =======
+  Widget _buildSection(String title, List<Widget> children) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -197,43 +243,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _infoTile("🎓 Course", _userData!['course'] ?? "N/A"),
-          _infoTile("📅 Year", _userData!['year'] ?? "N/A"),
-          _infoTile("📞 Contact", _userData!['contact'] ?? "N/A"),
-          _infoTile("🔗 LinkedIn", _userData!['linkedin'] ?? "N/A"),
-          _infoTile("💻 GitHub", _userData!['github'] ?? "N/A"),
+          Text(title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: AppTheme.primaryColor,
+              )),
+          const SizedBox(height: 10),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _infoTile(String title, String value) {
+  // ======= Info Tile Widget =======
+  Widget _infoTile(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+          Expanded(
+            flex: 3,
+            child: Text(
+              label,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: Colors.black87),
             ),
           ),
-          const SizedBox(width: 8),
           Expanded(
+            flex: 5,
             child: Text(
               value.isNotEmpty ? value : "N/A",
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
       ),
     );
+  }
+
+  // ======= Convert List to Comma-Separated String =======
+  String _listToString(dynamic listData) {
+    if (listData == null) return "N/A";
+    if (listData is List) {
+      return listData.isEmpty ? "N/A" : listData.join(", ");
+    }
+    return listData.toString();
   }
 }

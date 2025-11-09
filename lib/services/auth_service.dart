@@ -9,8 +9,9 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // -------------------- USER REGISTRATION --------------------
-  /// ✅ Register new student user and save extra info in Firestore
+  // --------------------------------------------------------------------------
+  // 🟢 REGISTER NEW STUDENT
+  // --------------------------------------------------------------------------
   Future<User?> registerWithEmail({
     required String email,
     required String password,
@@ -19,7 +20,7 @@ class AuthService {
     required String year,
   }) async {
     try {
-      // Create auth account
+      // Create account
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -27,22 +28,30 @@ class AuthService {
       final user = credential.user;
       if (user == null) throw Exception("User registration failed.");
 
-      // Save basic profile info in Firestore
-      await _firestore.collection('users').doc(user.uid).set({
+      // Default structure for Firestore user document
+      final userData = {
         'uid': user.uid,
-        'email': email,
-        'name': name,
-        'course': course,
-        'year': year,
+        'email': email.trim(),
+        'name': name.trim(),
+        'photoUrl': '',
         'contact': '',
+        'course': course.trim(),
+        'year': year.trim(),
+        'cgpa': '',
+        'careerGoal': '',
+        'skills': <String>[],
         'linkedin': '',
         'github': '',
-        'photoUrl': '',
-        'role': 'student', // default role
+        'resumeLink': '',
+        'portfolioLink': '',
+        'achievements': <String>[],
+        'languagesKnown': <String>[],
+        'role': 'student',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
 
+      await _firestore.collection('users').doc(user.uid).set(userData);
       return user;
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleFirebaseError(e));
@@ -51,8 +60,9 @@ class AuthService {
     }
   }
 
-  // -------------------- USER LOGIN --------------------
-  /// 🟡 Login with email & password
+  // --------------------------------------------------------------------------
+  // 🟡 LOGIN USER
+  // --------------------------------------------------------------------------
   Future<User?> loginWithEmail({
     required String email,
     required String password,
@@ -70,8 +80,9 @@ class AuthService {
     }
   }
 
-  // -------------------- FETCH USER DATA --------------------
-  /// 🟣 Get current user data from Firestore
+  // --------------------------------------------------------------------------
+  // 🟣 FETCH CURRENT USER DATA
+  // --------------------------------------------------------------------------
   Future<Map<String, dynamic>?> fetchUserData() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -80,8 +91,9 @@ class AuthService {
     return doc.data();
   }
 
-  // -------------------- UPDATE PROFILE --------------------
-  /// ✅ Update user profile (Firestore + optional photo + optional password)
+  // --------------------------------------------------------------------------
+  // 🔵 UPDATE PROFILE (All Fields)
+  // --------------------------------------------------------------------------
   Future<void> updateUserProfile({
     required Map<String, dynamic> updatedData,
     File? newPhotoFile,
@@ -89,7 +101,7 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) throw Exception("No logged-in user found.");
 
-    // Upload profile photo if provided
+    // Upload new profile photo if provided
     if (newPhotoFile != null) {
       final ref = _storage.ref().child('profile_photos/${user.uid}.jpg');
       await ref.putFile(newPhotoFile);
@@ -97,21 +109,36 @@ class AuthService {
       updatedData['photoUrl'] = photoUrl;
     }
 
-    // Update password if provided
+    // Update password (if provided)
     if (updatedData.containsKey('password') &&
         updatedData['password'] != null &&
         updatedData['password'].toString().isNotEmpty) {
       await user.updatePassword(updatedData['password']);
-      updatedData.remove('password'); // don’t store in Firestore
+      updatedData.remove('password'); // don't store in Firestore
     }
 
-    // Update Firestore fields
+    // Ensure lists are stored correctly
+    if (updatedData['skills'] is String) {
+      updatedData['skills'] =
+          updatedData['skills'].split(',').map((e) => e.trim()).toList();
+    }
+    if (updatedData['achievements'] is String) {
+      updatedData['achievements'] =
+          updatedData['achievements'].split(',').map((e) => e.trim()).toList();
+    }
+    if (updatedData['languagesKnown'] is String) {
+      updatedData['languagesKnown'] =
+          updatedData['languagesKnown'].split(',').map((e) => e.trim()).toList();
+    }
+
+    // Update Firestore
     updatedData['updatedAt'] = FieldValue.serverTimestamp();
     await _firestore.collection('users').doc(user.uid).update(updatedData);
   }
 
-  // -------------------- UPDATE USER FIELD (Utility) --------------------
-  /// ✳️ Update specific Firestore fields (e.g., LinkedIn or contact)
+  // --------------------------------------------------------------------------
+  // ✳️ UPDATE SINGLE FIELD (Utility)
+  // --------------------------------------------------------------------------
   Future<void> updateUserField(String field, dynamic value) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("No logged-in user found.");
@@ -121,22 +148,28 @@ class AuthService {
     });
   }
 
-  // -------------------- LOGOUT --------------------
-  /// 🚪 Logout user
+  // --------------------------------------------------------------------------
+  // 🚪 LOGOUT
+  // --------------------------------------------------------------------------
   Future<void> logout() async {
     await _auth.signOut();
   }
 
-  // -------------------- REFRESH USER --------------------
-  /// 🔁 Reload Firebase User instance
+  // --------------------------------------------------------------------------
+  // 🔁 RELOAD USER INSTANCE
+  // --------------------------------------------------------------------------
   Future<void> reloadUser() async {
     await _auth.currentUser?.reload();
   }
 
-  // -------------------- UTILITY --------------------
+  // --------------------------------------------------------------------------
+  // 🟤 GET CURRENT USER
+  // --------------------------------------------------------------------------
   User? get currentUser => _auth.currentUser;
 
-  // -------------------- FIREBASE ERROR HANDLER --------------------
+  // --------------------------------------------------------------------------
+  // ⚙️ HANDLE FIREBASE ERRORS
+  // --------------------------------------------------------------------------
   String _handleFirebaseError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':

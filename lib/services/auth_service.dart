@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   /// ✅ Register new user with extra info (name, course, year)
   Future<User?> registerWithEmail({
@@ -14,14 +17,12 @@ class AuthService {
     required String year,
   }) async {
     try {
-      // Create user in Firebase Auth
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       User? user = result.user;
 
-      // Store additional info in Firestore
       if (user != null) {
         await _firestore.collection('users').doc(user.uid).set({
           'uid': user.uid,
@@ -29,8 +30,12 @@ class AuthService {
           'name': name,
           'course': course,
           'year': year,
+          'contact': '',
+          'linkedin': '',
+          'github': '',
+          'photoUrl': '',
           'createdAt': FieldValue.serverTimestamp(),
-          'role': 'student', // default role
+          'role': 'student',
         });
       }
 
@@ -56,15 +61,59 @@ class AuthService {
     }
   }
 
-  /// ✅ Logout user
+  /// 🟣 Fetch user data from Firestore
+  Future<Map<String, dynamic>?> fetchUserData() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+    return doc.data();
+  }
+
+  /// ✅ Update user profile (Firestore + optional password + optional photo)
+  Future<void> updateUserProfile({
+    required Map<String, dynamic> updatedData,
+    File? photoFile,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in.");
+
+    String? photoUrl;
+
+    // Upload new profile photo if provided
+    if (photoFile != null) {
+      final ref = _storage.ref().child('profile_images/${user.uid}.jpg');
+      await ref.putFile(photoFile);
+      photoUrl = await ref.getDownloadURL();
+      updatedData['photoUrl'] = photoUrl;
+    }
+
+    // Update password if provided
+    if (updatedData.containsKey('password') &&
+        updatedData['password'] != null &&
+        updatedData['password'].toString().isNotEmpty) {
+      await user.updatePassword(updatedData['password']);
+      updatedData.remove('password'); // prevent storing in Firestore
+    }
+
+    // Save data to Firestore
+    await _firestore.collection('users').doc(user.uid).update(updatedData);
+  }
+
+  /// 🔁 Refresh Firebase user instance
+  Future<void> reloadUser() async {
+    await _auth.currentUser?.reload();
+  }
+
+  /// 🚪 Logout user
   Future<void> logout() async {
     await _auth.signOut();
   }
 
-  /// 🟣 Get current user
+  /// 🧾 Get current Firebase user
   User? get currentUser => _auth.currentUser;
 
-  /// ⚙️ Handle Firebase errors
+  /// ⚙️ Handle Firebase Auth errors
   String _handleFirebaseError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
@@ -77,6 +126,8 @@ class AuthService {
         return 'No user found for that email.';
       case 'wrong-password':
         return 'Incorrect password.';
+      case 'requires-recent-login':
+        return 'Please log in again to update your password.';
       default:
         return 'Authentication error: ${e.message}';
     }

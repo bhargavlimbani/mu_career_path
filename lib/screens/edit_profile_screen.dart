@@ -1,82 +1,110 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../widgets/custom_textfield.dart';
 import '../widgets/custom_button.dart';
 import '../theme/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final Map<String, dynamic> userData;
-  const EditProfileScreen({super.key, required this.userData});
+  // Keep constructor simple (screen will load current user data from Firestore)
+  const EditProfileScreen({super.key, required Map<String, dynamic> userData});
 
   @override
-  _EditProfileScreenState createState() => _EditProfileScreenState();
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
   late TextEditingController _emailController;
-  late TextEditingController _passwordController;
-  late TextEditingController _confirmPasswordController;
-  late TextEditingController _nameController;
-  late TextEditingController _courseController;
+  late TextEditingController _firstNameController; // First name
+  late TextEditingController _branchController;    // Branch (course)
   late TextEditingController _yearController;
   late TextEditingController _contactController;
   late TextEditingController _linkedinController;
   late TextEditingController _githubController;
+  late TextEditingController _passwordController;       // New password
+  late TextEditingController _confirmPasswordController; // Confirm password
 
   String? _photoPath;
-  bool _loading = false;
+  String? _photoUrl;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    final data = widget.userData;
+    _emailController = TextEditingController();
+    _firstNameController = TextEditingController();
+    _branchController = TextEditingController();
+    _yearController = TextEditingController();
+    _contactController = TextEditingController();
+    _linkedinController = TextEditingController();
+    _githubController = TextEditingController();
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
 
-    _emailController = TextEditingController(text: data['email'] ?? '');
-    _passwordController = TextEditingController(text: '');
-    _confirmPasswordController = TextEditingController(text: '');
-    _nameController = TextEditingController(text: data['name'] ?? '');
-    _courseController = TextEditingController(text: data['course'] ?? '');
-    _yearController = TextEditingController(text: data['year'] ?? '');
-    _contactController = TextEditingController(text: data['contact'] ?? '');
-    _linkedinController = TextEditingController(text: data['linkedin'] ?? '');
-    _githubController = TextEditingController(text: data['github'] ?? '');
-    _photoPath = data['photoPath'];
+    _loadUserData();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _courseController.dispose();
+    _firstNameController.dispose();
+    _branchController.dispose();
     _yearController.dispose();
     _contactController.dispose();
     _linkedinController.dispose();
     _githubController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  ImageProvider? _buildImageProvider(String? path) {
-    if (path == null || path.isEmpty) return null;
-    if (kIsWeb) return null; // Web support optional
-    final file = File(path);
-    if (file.existsSync()) return FileImage(file);
-    return null;
+  Future<void> _loadUserData() async {
+    setState(() => _loading = true);
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        final data = doc.data();
+        if (data != null) {
+          _emailController.text = data['email'] ?? '';
+          // Keep naming consistent: using 'name' field from Firestore as first name
+          _firstNameController.text = data['name'] ?? '';
+          _branchController.text = data['course'] ?? '';
+          _yearController.text = data['year'] ?? '';
+          _contactController.text = data['contact'] ?? '';
+          _linkedinController.text = data['linkedin'] ?? '';
+          _githubController.text = data['github'] ?? '';
+          _photoUrl = data['photoUrl'];
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading user data: $e')),
+        );
+      }
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-    if (xFile != null) setState(() => _photoPath = xFile.path);
+    final xFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (xFile != null) {
+      setState(() => _photoPath = xFile.path);
+    }
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
+    // Validate passwords match if provided
     if (_passwordController.text.isNotEmpty &&
         _passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,24 +113,77 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    final updatedData = {
-      'email': _emailController.text.trim(),
-      'password': _passwordController.text.trim(), // optional
-      'name': _nameController.text.trim(),
-      'course': _courseController.text.trim(),
-      'year': _yearController.text.trim(),
-      'contact': _contactController.text.trim(),
-      'linkedin': _linkedinController.text.trim(),
-      'github': _githubController.text.trim(),
-      'photoPath': _photoPath,
-    };
+    setState(() => _loading = true);
 
-    Navigator.pop(context, updatedData);
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception("No user logged in");
+
+      String? uploadedPhotoUrl = _photoUrl;
+
+      // Upload new profile photo if selected
+      if (_photoPath != null) {
+        final ref = _storage.ref().child('profile_photos/${user.uid}.jpg');
+        await ref.putFile(File(_photoPath!));
+        uploadedPhotoUrl = await ref.getDownloadURL();
+      }
+
+      // Update password if provided
+      if (_passwordController.text.isNotEmpty) {
+        await user.updatePassword(_passwordController.text.trim());
+      }
+
+      // Prepare updated data; 'name' stores first name to keep DB consistent
+      final updatedData = {
+        'name': _firstNameController.text.trim(),
+        'course': _branchController.text.trim(),
+        'year': _yearController.text.trim(),
+        'contact': _contactController.text.trim(),
+        'linkedin': _linkedinController.text.trim(),
+        'github': _githubController.text.trim(),
+        'photoUrl': uploadedPhotoUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore.collection('users').doc(user.uid).update(updatedData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+        Navigator.pop(context, true);
+      }
+    } on FirebaseException catch (e) {
+      // handle firebase-specific exceptions (e.g., requires-recent-login)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving profile: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving profile: $e')),
+        );
+      }
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  ImageProvider? _buildImageProvider() {
+    if (_photoPath != null) return FileImage(File(_photoPath!));
+    if (_photoUrl != null && _photoUrl!.isNotEmpty) {
+      return NetworkImage(_photoUrl!);
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.secondaryColor,
@@ -126,25 +207,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onTap: _pickPhoto,
               child: CircleAvatar(
                 radius: 48,
-                backgroundImage: _buildImageProvider(_photoPath),
-                child: _photoPath == null
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                backgroundImage: _buildImageProvider(),
+                child: _photoUrl == null && _photoPath == null
                     ? const Icon(Icons.camera_alt, size: 32, color: Colors.white70)
                     : null,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Form fields
+            // Email (read-only)
             CustomTextField(controller: _emailController, hint: 'Email', enabled: false),
             const SizedBox(height: 12),
-            CustomTextField(controller: _passwordController, hint: 'New Password', obscureText: true),
+
+            // Reordered fields (exact requested order)
+            CustomTextField(controller: _firstNameController, hint: 'First name'),
             const SizedBox(height: 12),
-            CustomTextField(controller: _confirmPasswordController, hint: 'Confirm Password', obscureText: true),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _nameController, hint: 'Full Name'),
-            const SizedBox(height: 12),
-            CustomTextField(controller: _courseController, hint: 'Course / Branch'),
+            CustomTextField(controller: _branchController, hint: 'Branch'),
             const SizedBox(height: 12),
             CustomTextField(controller: _yearController, hint: 'Year'),
             const SizedBox(height: 12),
@@ -153,9 +232,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             CustomTextField(controller: _linkedinController, hint: 'LinkedIn URL'),
             const SizedBox(height: 12),
             CustomTextField(controller: _githubController, hint: 'GitHub URL'),
+            const SizedBox(height: 12),
+
+            // Passwords at the end in requested order
+            CustomTextField(controller: _passwordController, hint: 'New Password (optional)', obscureText: true),
+            const SizedBox(height: 12),
+            CustomTextField(controller: _confirmPasswordController, hint: 'Confirm Password', obscureText: true),
             const SizedBox(height: 24),
 
-            // Save button
             CustomButton(
               text: 'Save Profile',
               onPressed: _saveProfile,

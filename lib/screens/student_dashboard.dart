@@ -269,7 +269,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.6)),
+        border:
+        Border.all(color: AppTheme.primaryColor.withOpacity(0.6)),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -284,21 +285,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
             color: AppTheme.primaryColor, size: 28),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title,
-                style:
-                const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            const SizedBox(height: 4),
-            Text(subtitle,
-                style:
-                const TextStyle(fontSize: 13, color: Colors.black54, height: 1.3)),
-          ]),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(subtitle,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                        height: 1.3)),
+              ]),
         ),
       ]),
     );
   }
 
-  // 🎯 Career Card with Centered Explore Button
+  // 🎯 Career Card
   Widget _careerCard({
     required String title,
     required String desc,
@@ -306,10 +311,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      padding:
+      const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.4), width: 1.2),
+        border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.4), width: 1.2),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -319,35 +326,43 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Text(
-          desc,
-          style: const TextStyle(fontSize: 14.5, color: Colors.black87, height: 1.5),
-        ),
-        const SizedBox(height: 22),
-        Center( // ⬅️ Center-aligned Explore Now button
-          child: ElevatedButton(
-            onPressed: onExplore,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text(
+              desc,
+              style: const TextStyle(
+                  fontSize: 14.5,
+                  color: Colors.black87,
+                  height: 1.5),
             ),
-            child: const Text(
-              "Explore Now",
-              style: TextStyle(color: Colors.white, fontSize: 15),
+            const SizedBox(height: 22),
+            Center(
+              child: ElevatedButton(
+                onPressed: onExplore,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text(
+                  "Explore Now",
+                  style:
+                  TextStyle(color: Colors.white, fontSize: 15),
+                ),
+              ),
             ),
-          ),
-        ),
-      ]),
+          ]),
     );
   }
 
-  // ---------------- Main Scaffold ----------------
+  // ---------------- MAIN SCAFFOLD ----------------
   @override
   Widget build(BuildContext context) {
     final screens = [
@@ -362,7 +377,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
       appBar: _selectedIndex == 0
           ? AppBar(
         backgroundColor: AppTheme.primaryColor,
-        elevation: 4,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(25)),
+        ),
+        centerTitle: true,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -386,9 +406,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     : null,
               ),
             ),
-            const Text("Student Dashboard",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 22)),
+            const Text(
+              "Student Dashboard",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 22),
+            ),
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white),
               onPressed: _logout,

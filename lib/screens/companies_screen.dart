@@ -5,7 +5,7 @@ import 'package:mu_career_pat_offline/theme/app_theme.dart';
 class CompaniesScreen extends StatelessWidget {
   const CompaniesScreen({super.key});
 
-  // 🧩 Company Data Model (Mock Data)
+
   List<Map<String, dynamic>> getSoftwareCompanies() {
     return [
       {
@@ -144,7 +144,6 @@ class CompaniesScreen extends StatelessWidget {
     ];
   }
 
-  // 🟢 Bottom Sheet for Company Details
   void _showCompanyDetails(BuildContext context, Map<String, dynamic> company) {
     showModalBottomSheet(
       context: context,
@@ -237,7 +236,7 @@ class CompaniesScreen extends StatelessWidget {
     );
   }
 
-  // 🧱 Reusable Company Card Widget
+
   Widget _buildCompanyCard(
       BuildContext context, Map<String, dynamic> company) {
     return InkWell(
@@ -272,7 +271,7 @@ class CompaniesScreen extends StatelessWidget {
     );
   }
 
-  // 🧩 MAIN BUILD
+
   @override
   Widget build(BuildContext context) {
     final softwareCompanies = getSoftwareCompanies();
@@ -297,7 +296,7 @@ class CompaniesScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🧩 Software Section
+           
             const Text(
               "💻 Software Companies",
               style: TextStyle(
@@ -321,7 +320,7 @@ class CompaniesScreen extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // ⚙️ Hardware Section
+          
             const Text(
               "⚙️ Hardware Companies",
               style: TextStyle(

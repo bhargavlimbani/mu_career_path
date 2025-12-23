@@ -1,4 +1,4 @@
-// lib/services/auth_service.dart
+
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,9 +9,7 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // --------------------------------------------------------------------------
-  // 🟢 REGISTER NEW STUDENT
-  // --------------------------------------------------------------------------
+
   Future<User?> registerWithEmail({
     required String email,
     required String password,
@@ -60,9 +58,7 @@ class AuthService {
     }
   }
 
-  // --------------------------------------------------------------------------
-  // 🟡 LOGIN USER
-  // --------------------------------------------------------------------------
+
   Future<User?> loginWithEmail({
     required String email,
     required String password,
@@ -80,9 +76,7 @@ class AuthService {
     }
   }
 
-  // --------------------------------------------------------------------------
-  // 🟣 FETCH CURRENT USER DATA
-  // --------------------------------------------------------------------------
+
   Future<Map<String, dynamic>?> fetchUserData() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -91,9 +85,6 @@ class AuthService {
     return doc.data();
   }
 
-  // --------------------------------------------------------------------------
-  // 🔵 UPDATE PROFILE (All Fields)
-  // --------------------------------------------------------------------------
   Future<void> updateUserProfile({
     required Map<String, dynamic> updatedData,
     File? newPhotoFile,
@@ -101,7 +92,7 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) throw Exception("No logged-in user found.");
 
-    // Upload new profile photo if provided
+   
     if (newPhotoFile != null) {
       final ref = _storage.ref().child('profile_photos/${user.uid}.jpg');
       await ref.putFile(newPhotoFile);
@@ -109,15 +100,15 @@ class AuthService {
       updatedData['photoUrl'] = photoUrl;
     }
 
-    // Update password (if provided)
+
     if (updatedData.containsKey('password') &&
         updatedData['password'] != null &&
         updatedData['password'].toString().isNotEmpty) {
       await user.updatePassword(updatedData['password']);
-      updatedData.remove('password'); // don't store in Firestore
+      updatedData.remove('password'); 
     }
 
-    // Ensure lists are stored correctly
+    
     if (updatedData['skills'] is String) {
       updatedData['skills'] =
           updatedData['skills'].split(',').map((e) => e.trim()).toList();
@@ -131,14 +122,12 @@ class AuthService {
           updatedData['languagesKnown'].split(',').map((e) => e.trim()).toList();
     }
 
-    // Update Firestore
+ 
     updatedData['updatedAt'] = FieldValue.serverTimestamp();
     await _firestore.collection('users').doc(user.uid).update(updatedData);
   }
 
-  // --------------------------------------------------------------------------
-  // ✳️ UPDATE SINGLE FIELD (Utility)
-  // --------------------------------------------------------------------------
+
   Future<void> updateUserField(String field, dynamic value) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("No logged-in user found.");
@@ -148,28 +137,19 @@ class AuthService {
     });
   }
 
-  // --------------------------------------------------------------------------
-  // 🚪 LOGOUT
-  // --------------------------------------------------------------------------
+
   Future<void> logout() async {
     await _auth.signOut();
   }
 
-  // --------------------------------------------------------------------------
-  // 🔁 RELOAD USER INSTANCE
-  // --------------------------------------------------------------------------
   Future<void> reloadUser() async {
     await _auth.currentUser?.reload();
   }
 
-  // --------------------------------------------------------------------------
-  // 🟤 GET CURRENT USER
-  // --------------------------------------------------------------------------
+
   User? get currentUser => _auth.currentUser;
 
-  // --------------------------------------------------------------------------
-  // ⚙️ HANDLE FIREBASE ERRORS
-  // --------------------------------------------------------------------------
+
   String _handleFirebaseError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':

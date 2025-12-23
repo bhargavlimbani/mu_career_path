@@ -36,7 +36,7 @@ class DataScienceAIExploreScreen extends StatelessWidget {
               ["Google AI", "NVIDIA", "IBM", "TCS", "Amazon AWS"]),
           _section("🎯 Career Roles", [
             "Data Analyst",
-            "Machine Learning Engineer",
+            "Machine Learning Engineer",            
             "AI Researcher",
             "Data Engineer"
           ]),

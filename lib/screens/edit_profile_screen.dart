@@ -22,7 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // Controllers
+ 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
@@ -90,7 +90,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       String? uploadedPhotoUrl = _photoUrl;
 
-      // Upload photo if changed
+
       if (_photoPath != null) {
         final ref = _storage.ref().child('profile_photos/${user.uid}.jpg');
         await ref.putFile(File(_photoPath!));
@@ -230,7 +230,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // Custom Section Container with teal border
   Widget _sectionContainer(String title, List<Widget> children) {
     return Container(
       width: double.infinity,

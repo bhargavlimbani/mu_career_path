@@ -9,8 +9,8 @@ class UserModel {
   UserRole role;
   String branch;
   String year;
-  String? photoPath; // profile photo
-  List<String> resumePaths; // resume file paths
+  String? photoPath; 
+  List<String> resumePaths; 
   String? contact;
   String? linkedin;
   String? github;

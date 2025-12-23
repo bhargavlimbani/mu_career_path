@@ -65,7 +65,6 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
     }
   }
 
-  // 🟢 Show full student details in a scrollable bottom sheet
   Future<void> _showStudentDetails(String uid, Map<String, dynamic> expData) async {
     try {
       final userDoc = await _firestore.collection('users').doc(uid).get();
@@ -219,7 +218,7 @@ class _ExperiencesScreenState extends State<ExperiencesScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Experience form
+       
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

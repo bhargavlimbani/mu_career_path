@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mu_career_pat_offline/services/auth_service.dart';
-import 'package:mu_career_pat_offline/theme/app_theme.dart';
+import '/services/auth_service.dart';
+import '/theme/app_theme.dart';
 import 'register_screen.dart';
 import 'student_dashboard.dart';
 
@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final AuthService _auth = AuthService();
 
-  // 🔐 Login function
+
   void _loginUser() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🖼️ Logo
+             
                   Image.asset(
                     "assets/icon.png",
                     height: 120,
@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // ✉️ Email field
+           
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  // 🔒 Password field
+     
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscure,
@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // 🔘 Login button
+                 
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -150,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  // 📝 Register link
+                
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(

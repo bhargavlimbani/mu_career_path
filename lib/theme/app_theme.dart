@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // 🎨 Core color definitions
-  static const Color primaryColor = Color(0xFF01A6BA); // teal
-  static const Color secondaryColor = Colors.white;    // white
-  static const Color blackColor = Colors.black;        // black
 
-  // ✅ Backward compatibility for old code references
+  static const Color primaryColor = Color(0xFF01A6BA); 
+  static const Color secondaryColor = Colors.white;   
+  static const Color blackColor = Colors.black;        
+
+
   static const Color primary = primaryColor;
   static const Color secondary = secondaryColor;
   static const Color textColor = blackColor;
 
-  // 🧱 Input field styling
+
   static InputDecoration inputDecoration({
     required String label,
     required IconData icon,
@@ -40,7 +40,7 @@ class AppTheme {
     );
   }
 
-  // 🧱 Elevated button styling
+
   static ButtonStyle elevatedButtonStyle({double radius = 16}) {
     return ElevatedButton.styleFrom(
       backgroundColor: primaryColor,
@@ -52,14 +52,14 @@ class AppTheme {
     );
   }
 
-  // ✍️ Button text style
+
   static const TextStyle buttonText = TextStyle(
     color: secondaryColor,
     fontSize: 18,
     fontWeight: FontWeight.bold,
   );
 
-  // ✍️ Link text style
+
   static const TextStyle linkText = TextStyle(
     color: primaryColor,
     fontWeight: FontWeight.w500,

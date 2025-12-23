@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:mu_career_pat_offline/theme/app_theme.dart';
 
 class HardwareIoTExploreScreen extends StatelessWidget {
   const HardwareIoTExploreScreen({super.key});

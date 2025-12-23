@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mu_career_pat_offline/services/auth_service.dart';
 import 'student_dashboard.dart';
 import 'login_screen.dart';
-import 'package:mu_career_pat_offline/theme/app_theme.dart';
+import '/theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -177,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 25),
 
-                  // Register Button with Gradient
+
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -218,7 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  // Login Redirect
+               
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(

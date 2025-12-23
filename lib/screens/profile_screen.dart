@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_screen.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
-import '../services/auth_service.dart';
+import 'package:mu_career_pat_offline/services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -87,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // ======= Profile Avatar =======
+      
               CircleAvatar(
                 radius: 55,
                 backgroundColor:
@@ -105,7 +105,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 20),
 
-              // ======= Name =======
               Text(
                 _userData!['name'] ?? 'Student',
                 style: const TextStyle(
@@ -116,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
 
-              // ======= Email =======
+             
               Text(
                 _userData!['email'] ?? 'No Email',
                 style: const TextStyle(
@@ -126,7 +125,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ======= Info Sections =======
               _buildSection(
                   "👤 Personal Information",
                   [
@@ -176,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 25),
 
-              // ======= Buttons =======
+           
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -224,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ======= Section Builder =======
+
   Widget _buildSection(String title, List<Widget> children) {
     return Container(
       width: double.infinity,
@@ -284,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ======= Convert List to Comma-Separated String =======
+
   String _listToString(dynamic listData) {
     if (listData == null) return "N/A";
     if (listData is List) {

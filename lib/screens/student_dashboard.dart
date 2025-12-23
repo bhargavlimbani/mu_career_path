@@ -420,20 +420,28 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ? AppBar(
               backgroundColor: AppTheme.primaryColor,
               elevation: 0,
+              centerTitle: true,
+
+              // ✅ Rounded bottom AppBar
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(25),
                 ),
               ),
-              centerTitle: true,
+
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // 👤 Profile Avatar
                   GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
+                        ),
+                      );
+                    },
                     child: CircleAvatar(
                       radius: 20,
                       backgroundColor: AppTheme.primaryColor.withOpacity(0.3),
@@ -453,10 +461,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           : null,
                     ),
                   ),
+
+                  // 🧑‍🎓 Title
                   const Text(
                     "Student Dashboard",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
                   ),
+
+                  // 🚪 Logout Button
                   IconButton(
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: _logout,
@@ -465,6 +477,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             )
           : null,
+
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : screens[_selectedIndex],
